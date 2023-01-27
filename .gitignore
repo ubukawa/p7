@@ -19,5 +19,5 @@ produce-osm/pmtiles/osm_tile_day05/*.pmtiles*
 produce-osm/pmtiles/osm_tile_day06/*.pmtiles*
 produce-osm/pmtiles/osm_tile_day07/*.pmtiles*
 
-produce-un/mbtiles/*.mbtiles
-produce-un/pmtiles/*.pmtiles
+produce-un/mbtiles/un_tile/*.mbtiles*
+produce-un/pmtiles/un_tile/*.pmtiles*
