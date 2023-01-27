@@ -1,2 +1,13 @@
 config/default.hjson
-node_modudules
+log/*.log
+log/*.json
+node_modules
+produce-osm/mbtiles/osm_tile_every/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day01/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day02/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day03/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day04/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day05/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day06/*.mbtiles*
+produce-osm/mbtiles/osm_tile_day07/*.mbtiles*
+produce-un/mbtiles/*.mbtiles

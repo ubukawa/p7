@@ -16,5 +16,19 @@
   "bugs": {
     "url": "https://github.com/ubukawa/p7/issues"
   },
-  "homepage": "https://github.com/ubukawa/p7#readme"
+  "homepage": "https://github.com/ubukawa/p7#readme",
+  "dependencies": {
+    "@mapbox/geojson-area": "^0.2.2",
+    "@mapbox/tilebelt": "^1.0.2",
+    "better-queue": "^3.8.12",
+    "cli-spinner": "^0.2.10",
+    "config": "^3.3.9",
+    "hh-mm-ss": "^1.2.0",
+    "hjson": "^3.2.2",
+    "json-text-sequence": "^1.0.1",
+    "pg": "^8.9.0",
+    "prettysize": "^2.0.0",
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1"
+  }
 }
