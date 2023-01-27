@@ -10,4 +10,14 @@ produce-osm/mbtiles/osm_tile_day04/*.mbtiles*
 produce-osm/mbtiles/osm_tile_day05/*.mbtiles*
 produce-osm/mbtiles/osm_tile_day06/*.mbtiles*
 produce-osm/mbtiles/osm_tile_day07/*.mbtiles*
+produce-osm/pmtiles/osm_tile_every/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day01/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day02/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day03/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day04/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day05/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day06/*.pmtiles*
+produce-osm/pmtiles/osm_tile_day07/*.pmtiles*
+
 produce-un/mbtiles/*.mbtiles
+produce-un/pmtiles/*.pmtiles

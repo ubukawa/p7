@@ -1,6 +1,7 @@
 // libraries
 const config = require('config')
 const { spawn } = require('child_process')
+const byline = require('byline')
 const fs = require('fs')
 const Queue = require('better-queue')
 const pretty = require('prettysize')
@@ -10,97 +11,25 @@ const { Pool, Query } = require('pg')
 const Spinner = require('cli-spinner').Spinner
 const winston = require('winston')
 const DailyRotateFile = require('winston-daily-rotate-file')
-const modify = require('./modify.js')
+const modify = require('./modify-compact.js')
 
 // config constants
-let host 
-let port
-let Z
-let dbUser
-let dbPassword
-let relations
-let propertyBlacklist
-let mbtilesDir
-let pmtilesDir
-let conversionTilelist
-let concurrent
+const host = config.get('osm-l.host')
+const port = config.get('osm-l.port') 
+const wtpsThreshold = config.get('wtpsThreshold')
+const monitorPeriod = config.get('monitorPeriod')
+const Z = config.get('osm-s.Z')
+const dbUser = config.get('osm-l.dbUser')
+const dbPassword = config.get('osm-l.dbPassword')
+const relations = config.get('osm-s.relations')
 const defaultDate = new Date(config.get('defaultDate'))
+const mbtilesDir = config.get('osm-s.mbtilesDir') //edited 2020-01-22
 const logDir = config.get('logDir')
+const propertyBlacklist = config.get('osm-s.propertyBlacklist')
+const conversionTilelist = config.get('osm-s.conversionTilelist') //edited 2021-01-22
 const spinnerString = config.get('spinnerString')
 const fetchSize = config.get('fetchSize')
 const tippecanoePath = config.get('tippecanoePath')
-
-// inputs from the command (with default value)
-let reg = "e"
-let hostSv = "osm"
-let format = "mbtiles" //for future expansion for pmtiles
-
-for (i = 2; i < process.argv.length; i++ ) {
-    //console.log(process.argv[i])
-    if (process.argv[i].includes('-r=')){        
-        let r = process.argv[i].replace('-r=','')
-        r = r.toLowerCase()
-        if ( r=='e' || r==1 || r==2 || r==3 || r==4 || r==5 || r==6 || r==7 ){
-            reg = r
-        }
-    }
-    if (process.argv[i].includes('-h=')){
-        let h = process.argv[i].replace('-h=','')
-        h = h.toLowerCase()
-        if ( h=='un' || h=='osm' ){
-            hostSv = h
-        }
-    }
-    if (process.argv[i].includes('-f=')){
-        let fm = process.argv[i].replace('-f=','')
-        fm = fm.toLowerCase()
-        if ( fm=='mbtiles' || fm=='pmtiles' ){
-            format = fm
-        }
-    }
-}
-
-//Setting parameters based on region and host
-
-if (hostSv == 'un') { //in a case "-h=un" (default is osm)
-    host = config.get('un-l.host')
-    port = config.get('un-l.port') 
-    Z = config.get('un-l.Z')
-    dbUser = config.get('un-l.dbUser')
-    dbPassword = config.get('un-l.dbPassword')
-    relations = config.get('un-l.relations')
-    concurrent = config.get('un-l.concurrent')
-    propertyBlacklist = config.get('un-l.propertyBlacklist')
-    mbtilesDir = config.get('un-l.mbtilesDir')
-    pmtilesDir = config.get('un-l.pmtilesDir')
-    conversionTilelist = config.get('everydayTilelist').concat(config.get('day01Tilelist')).concat(config.get('day02Tilelist')).concat(config.get('day03Tilelist')).concat(config.get('day04Tilelist')).concat(config.get('day05Tilelist')).concat(config.get('day06Tilelist')).concat(config.get('day07Tilelist'))
-} else { //meaning osm
-    host = config.get('osm-l.host')
-    port = config.get('osm-l.port') 
-    Z = config.get('osm-l.Z')
-    dbUser = config.get('osm-l.dbUser')
-    dbPassword = config.get('osm-l.dbPassword')
-    relations = config.get('osm-l.relations')
-    propertyBlacklist = config.get('osm-l.propertyBlacklist')
-    if (reg !== 'e') {
-        mbtilesDir = config.get(`osm-l.mbtilesDir_day0${reg}`)
-        pmtilesDir = config.get(`osm-l.pmtilesDir_day0${reg}`)
-        conversionTilelist = config.get(`day0${reg}Tilelist`)  
-        concurrent = config.get('osm-l.concurrentE')    
-    } else {
-        mbtilesDir = config.get('osm-l.mbtilesDir_every')
-        pmtilesDir = config.get('osm-l.pmtilesDir_every')
-        conversionTilelist = config.get('everydayTilelist')
-        concurrent = config.get('osm-l.concurrent') 
-    }
-} 
-
-let outDirectory
-if (format == 'pmtiles'){
-  outDirectory = pmtilesDir
-} else {
-  outDirectory = mbtilesDir
-}
 
 // global configurations
 Spinner.setDefaultSpinnerString(spinnerString)
@@ -109,7 +38,7 @@ winston.configure({
   format: winston.format.simple(),
   transports: [ 
     new DailyRotateFile({
-      filename: `${logDir}/produce-everyday-%DATE%.log`,
+      filename: `${logDir}/produce-osm-small-%DATE%.log`,
       datePattern: 'YYYY-MM-DD',
       maxSize: '20m',
       maxFiles: '14d'
@@ -138,7 +67,7 @@ const getScores = async () => {
 
 //Replaced loop (based on the list)
     for (const moduleKey of conversionTilelist) {
-      const path = `${outDirectory}/${moduleKey}.${format}`
+      const path = `${mbtilesDir}/${moduleKey}.mbtiles`
       let mtime = defaultDate
       let size = 0
       if (fs.existsSync(path)) {
@@ -235,6 +164,14 @@ SELECT column_name FROM information_schema.columns
       // ST_AsGeoJSON(ST_Intersection(ST_MakeValid(${table}.geom), envelope.geom))
       cols.push(`ST_AsGeoJSON(${schema}.${table}.geom)`)
       await client.query(`BEGIN`)
+
+if (table == 'roads_major_0408_l' ){
+      sql = `
+DECLARE cur CURSOR FOR 
+SELECT ST_AsGeoJSON(ST_Simplify(ST_LineMerge(ST_Collect(ARRAY(SELECT geom FROM ${schema}.${table} WHERE z_order=1 OR z_order=3))),0.001, true))
+
+` 
+} else {
       sql = `
 DECLARE cur CURSOR FOR 
 WITH 
@@ -244,6 +181,8 @@ SELECT
 FROM ${schema}.${table}
 JOIN envelope ON ${schema}.${table}.geom && envelope.geom
 ` 
+}
+
       cols = await client.query(sql)
       try {
         while (await fetch(client, database, table, downstream) !== 0) {}
@@ -270,8 +209,8 @@ const queue = new Queue(async (t, cb) => {
   const queueStats = queue.getStats()
   const [z, x, y] = moduleKey.split('-').map(v => Number(v))
   const bbox = tilebelt.tileToBBOX([x, y, z])
-  const tmpPath = `${outDirectory}/part-${moduleKey}.${format}`
-  const dstPath = `${outDirectory}/${moduleKey}.${format}`
+  const tmpPath = `${mbtilesDir}/part-${moduleKey}.mbtiles`
+  const dstPath = `${mbtilesDir}/${moduleKey}.mbtiles`
 
   moduleKeysInProgress.push(moduleKey)
   productionSpinner.setSpinnerTitle(moduleKeysInProgress.join(', '))
@@ -283,8 +222,8 @@ const queue = new Queue(async (t, cb) => {
     '--force',
     '--simplification=2',
     `--minimum-zoom=${Z}`,
-    '--maximum-zoom=15',
-    '--base-zoom=15',
+    '--maximum-zoom=5',
+    '--base-zoom=5',
     '--hilbert',
     `--clip-bounding-box=${bbox.join(',')}`,
     `--output=${tmpPath}`
@@ -319,7 +258,7 @@ const queue = new Queue(async (t, cb) => {
   }
   tippecanoe.stdin.end()
 }, { 
-  concurrent: concurrent, 
+  concurrent: config.get('concurrentS'), 
   maxRetries: config.get('maxRetries'),
   retryDelay: config.get('retryDelay') 
 })
@@ -342,12 +281,12 @@ const queueTasks = () => {
 // shutdown this system
 const shutdown = () => {
   winston.info(`${iso()}: production system shutdown.`)
-  console.log('** production system shutdown! **')
+  console.log('** production system for osm-s shutdown! **')
   process.exit(0)
 }
 
 const main = async () => {
-  winston.info(`${iso()}: Everyday tile production started.`)
+  winston.info(`${iso()}: osm-s tile production started.`)
   await getScores()
   queueTasks()
   queue.on('drain', () => {
