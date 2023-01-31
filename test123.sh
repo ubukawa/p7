@@ -19,8 +19,8 @@ echo "node index_l.js -r=$day";
 #node index_l.js -r=$day
 
 ### Joining osm tile with un tile, then save it in large_tiles
-for f in produce-gsc-osm/$format/osm_tile_$tile/*.$format; do echo /usr/local/bin/tile-join --no-tile-size-limit -f -o large_tiles/unosm/tile_$tile/`basename ${f}` produce-un/$format/un_tile/`basename ${f}` produce-osm/$format/osm_tile_$tile/`basename ${f}`; date; echo `basename ${f}`; ls -alh large_tiles/unosm/tile_$tile/`basename ${f}` ;done;
-#for f in produce-gsc-osm/$format/osm_tile_$tile/*.$format; do /usr/local/bin/tile-join --no-tile-size-limit -f -o large_tiles/unosm/tile_$tile/`basename ${f}` produce-un/$format/un_tile/`basename ${f}` produce-osm/$format/osm_tile_$tile/`basename ${f}`; date; echo  `basename ${f}`; ls -alh large_tiles/unosm/tile_$tile/`basename ${f}` ;done
+#for f in produce-gsc-osm/$format/osm_tile_$tile/*.$format; do echo /usr/local/bin/tile-join --no-tile-size-limit -f -o large_tiles/unosm/tile_$tile/`basename ${f}` produce-un/$format/un_tile/`basename ${f}` produce-osm/$format/osm_tile_$tile/`basename ${f}`; date; echo `basename ${f}`; ls -alh large_tiles/unosm/tile_$tile/`basename ${f}` ;done;
+for f in produce-gsc-osm/$format/osm_tile_$tile/*.$format; do /usr/local/bin/tile-join --no-tile-size-limit -f -o large_tiles/unosm/tile_$tile/`basename ${f}` produce-un/$format/un_tile/`basename ${f}` produce-osm/$format/osm_tile_$tile/`basename ${f}`; date; echo  `basename ${f}`; ls -alh large_tiles/unosm/tile_$tile/`basename ${f}` ;done
 
 echo scp -i XXX -r ./large_tiles/unosm/tile_$tile/* username@hostingserver:path/$format/unosm
 #scp -i XXX(path to your ssh key) -r ./large_tiles/unosm/tile_day01/* (username)@(hostingserver):(path)/mbtiles/unosm
